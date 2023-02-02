@@ -14,6 +14,7 @@ base <- cvdbr_ms %>% filter(coduf == '26', municipio == 'Recife')
 write_rds(recife, "inst/extdata/recife.rds")
 
 library(lubridate)
+library(tidymodels)
 base %>% filter(year(data) == 2022) %>%
   mutate(obitosNovos = obitosAcumulado - lag(obitosAcumulado, 1L, order_by = data, default = 0L)) %>%
   select(data, obitosAcumulado) %>%
@@ -22,6 +23,13 @@ base %>% filter(year(data) == 2022) %>%
   arrange(data) %>%
   mutate(phase = cumsum(change) + 1,
          log_var = log(obitosAcumulado + 1)) %>%
+  nest(data = -phase) %>%
+  mutate(
+    fit = map(data , ~ lm(log_var ~ N, data = .x %>% mutate(N = row_number()))),
+    tidied = map(fit, tidy)
+  ) %>%
+  unnest(tidied)
+
   group_split(phase) %>%
   map_dfr( ~ .x %>% mutate(N = row_number()) %>% transmute(model = list = model = lm(var ~ N, data = .)))
 
