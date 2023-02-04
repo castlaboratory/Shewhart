@@ -13,7 +13,7 @@ rolling_sum <- tibbletime::rollify(sum, window = 7, na_value = 0)
 #' @param start_base Number of points in start of the series to use as base
 #' @param model One of log (default) and Gompetz.
 #' @export
-shewhart_7points <- function(data, index_col, values_col, start_base = 10, model = c("log", "competz"), ...){
+shewhart_7points <- function(data, index_col, values_col, start_base = 10, model = "log", ...){
   stopifnot(nrow(data) > start_base)
   subdata <- data %>%
     select({{index_col}}, {{values_col}})
@@ -21,7 +21,8 @@ shewhart_7points <- function(data, index_col, values_col, start_base = 10, model
   running_model <- shewhart_model(data = subdata,
                                   index_col = {{index_col}},
                                   values_col = {{values_col}},
-                                  start_base)
+                                  start_base,
+                                  model = model)
 
   # running_model %>% head() %>% print() # DEBUG:
 
@@ -53,14 +54,35 @@ shewhart_7points <- function(data, index_col, values_col, start_base = 10, model
                                     index_col = {{index_col}},
                                     values_col = {{values_col}},
                                     phase_changes = found_phase_dates,
-                                    start_base)
+                                    start_base,
+                                    model = model)
 
 
   }
   return(found_phase_dates)
  }
 
-
+#' Get Shewhard phases using 7 points rule
+#' @param data A tibble white de
+#' @param index_col Column with sequence of dates or intergers
+#' @param values_col Column with values to analyze
+#' @param model One of log (default) and Gompetz.
+#' @export
+shewhart_fit <- function(data, index_col, values_col, model = "log", ...){
+  if (model == "log") {
+    fit <- data %>% mutate(log_var := log({{values_col}} + 1)) %>%
+      lm(log_var ~ N, data = .)
+  }
+  if (model == "gompertz"){
+    fit <- NA
+    tryCatch({
+      fit <- data %>% mutate(avar := cumsum({{values_col}}) + 1) %>%
+        nls(avar ~ SSgompertz(N, Asym, b2, b3), data = ., control = nls.control(maxiter = 50))
+    }, error=function(e) NA_real_)
+    stopifnot(!is.na(fit))
+  }
+  return(fit)
+}
 
 
 #' Get Shewhard phases using 7 points rule
@@ -71,8 +93,8 @@ shewhart_7points <- function(data, index_col, values_col, start_base = 10, model
 #' @param start_base Number of points in start of the series to use as base
 #' @param model One of log (default) and Gompetz.
 #' @export
-shewhart_model <- function(data, values_col, index_col, start_base = 10, model = c("log", "competz"), phase_changes = character(), ...){
-
+shewhart_model <- function(data, values_col, index_col, start_base = 10, model = "log", phase_changes = character(), ...){
+stopifnot(model %in% c("log", "gompertz"))
    data %>%
     select({{index_col}}, {{values_col}}) %>%
      left_join(tibble({{index_col}} := unique(c(min(pull(data, {{index_col}})) + start_base, phase_changes)), change = TRUE),
@@ -80,20 +102,22 @@ shewhart_model <- function(data, values_col, index_col, start_base = 10, model =
      replace_na(list(change = FALSE)) %>%
      arrange({{index_col}}) %>%
      mutate(phase = cumsum(change),
-            log_var := log({{values_col}} + 1)) %>%
+            model = model) %>%
      group_by(phase) %>%
      mutate(N = row_number()) %>%
      ungroup() %>%
      nest(data = -phase) %>%
      mutate(
-       fit = map(data , ~ lm(log_var ~ N, data = .x)),
+       fit = map(data , ~ shewhart_fit(data = .x, index_col = {{index_col}}, values_col = {{values_col}}, model = model)), #lm(log_var ~ N, data = .x)),
        tidied = map(fit, tidy)
      ) %>%
      mutate(fit = if_else(phase == max(phase), lag(fit), fit),
             tidied = if_else(phase == max(phase), lag(tidied), tidied),
             fitted = map2(data, fit, ~ predict(.y, newdata = .x, se.fit = FALSE))) %>%
      unnest(c(data, fitted)) %>%
-     mutate(residuals = log_var - fitted) %>%
+     mutate(residuals = if_else(model == "log",
+                                log({{values_col}} + 1) - fitted,
+                                {{values_col}} - (fitted - lag(fitted, default = 1)))) %>%
      group_by(phase) %>%
      mutate(CONL_1 = 2.66*mean(abs(residuals - lag(residuals)), na.rm = TRUE),
             UCL = pmax(0, fitted + CONL_1, na.rm = TRUE),

@@ -8,20 +8,22 @@
 #' @param start_base Number of points in start of the series to use as base
 #' @param model One of log (default) and Gompetz.
 #' @export
-shewhart <- function(data, values_col, index_col, start_base = 10, type = "ggplot", rule = "7 points", method = "log", locale = "pt_BR.UTF-8", ...){
+shewhart <- function(data, values_col, index_col, start_base = 10, type = "ggplot", rule = "7 points", model = "log", locale = "pt_BR.UTF-8", ...){
   phase_changes <- shewhart_7points(data = data,
                                     index_col =  {{index_col}},
                                     values_col = {{values_col}},
-                                    start_base = {{start_base}})
+                                    start_base = {{start_base}},
+                                    model = model)
   plot_data <- shewhart_model(data = data,
                                index_col =  {{index_col}},
                                values_col = {{values_col}},
                                start_base = {{start_base}},
-                               phase_changes = phase_changes)
+                               phase_changes = phase_changes,
+                              model = model)
   pal_fases <- c(
-    rev(brewer.set2(8)),
-    rev(brewer.set3(8)),
-    rev(brewer.set1(8))
+    rev(pals::brewer.set2(8)),
+    rev(pals::brewer.set3(8)),
+    rev(pals::brewer.set1(8))
   )
 
   p <- plot_data %>%
@@ -72,7 +74,7 @@ shewhart <- function(data, values_col, index_col, start_base = 10, type = "ggplo
     layout(#hovermode="y unified",
       #hoverdistance = 100,
       title = list(
-        text = "teste",
+        text = model,
         x = 0,
         y = 1,
         xanchor = 'left',

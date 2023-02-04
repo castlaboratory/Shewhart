@@ -64,171 +64,82 @@ base %>% filter(year(data) == 2022) %>%
   group_split(phase) %>%
   map_dfr( ~ .x %>% mutate(N = row_number()) %>% transmute(model = list = model = lm(var ~ N, data = .)))
 
+base <- read_rds("inst/extdata/cvd19br_ms.rds")  %>% filter(coduf == '26', municipio == 'Recife')
 
 teste <- base %>% filter(year(data) == 2022) %>%
     mutate(obitosNovos = obitosAcumulado - lag(obitosAcumulado, 1L, order_by = data, default = 0L)) %>%
     select(data, obitosNovos) %>%
   mutate(obitosNovos = if_else(obitosNovos >= 0, obitosNovos, 0L))
 
+#teste$obitosNovos[1] = 0
 
-Shewhart::shewhard_model(data = teste, index_col = data, values_col = obitosNovos, phase_changes = recife$`Término`[-1])
+write_rds(teste, "inst/extdata/recife_2002_covid19.rds")
+
+library(epifitter)
+teste
+
+Shewhart::shewhart_model(data = gptz, index_col = data, values_col = obitosNovos, model = "gompertz") %>% View
+
+shewhart(data = gptz, values_col = y, index_col = data)
+
+Gompertz <- function(x, a, b, g){
+  result <- a*exp(-exp(b - g*x))
+  return(result)
+}
+
+gptz <- teste %>%
+  mutate(N = row_number(),
+         y = obitosNovos,
+         ay = cumsum(obitosNovos) + 1)
+
+ggplot(teste) + geom_point(aes(x = data, y = obitosNovos))
+
+Gomp1 <-  nls(ay ~ Gompertz(N, a, b, g),
+              data = gptz)
 
 
+gptz_model = nls(ay ~ SSgompertz(N, Asym, b2, b3), data = gptz %>% filter(row_number() <= 10))
 
-shewhart_model(data = teste, index_col = data, values_col = obitosNovos,
-               phase_changes = c("2022-01-23", "2022-02-17"))  %>%
-  select(data, obitosNovos, fitted, CL, phase) %>%
-  filter(phase == max(phase)) %>%
+shewhart_fit(data = gptz %>% filter(row_number() <= 10), index_col = N, values_col = y)
+
+
+gptz_model$control
+
+recife <- read_rds("inst/extdata/")
+
+gptz %>%
+  left_join(tibble(data = c(min(.$data + 10)), change = TRUE), by = "data") %>%
+  replace_na(list(change = FALSE)) %>%
+  arrange(data) %>%
+  mutate(phase = cumsum(change)) %>%
+  group_by(phase) %>%
+  mutate(N = row_number(),
+         model = "log") %>%
+  ungroup() %>%
+  nest(data = -phase) %>%
   mutate(
-    upper = if_else(obitosNovos > CL, 1, 0),
-    lower = if_else(obitosNovos <  CL, 1, 0),
-    upper_cs = rolling_sum(upper),
-    lower_cs = rolling_sum(lower)) %>%
-  filter(upper_cs == 7 | lower_cs == 7) %>%
-  slice_min(n = 1, order_by = data) %>%
-  pull(data)
-
-pal_fases <- c(
-  rev(brewer.set2(8)),
-  rev(brewer.set3(8)),
-  rev(brewer.set1(8))
-)
-
-y_max <- max(values$plot_base[,'obitosNovos'], na.rm = TRUE)
-
-#str(values$plot_base)
-teste$obitosNovos[1] = 0
-
-p <-  shewhart(data = teste, index_col = data, values_col = obitosNovos) %>%
-  mutate(day = str_to_title(wday(data,
-                                 label = TRUE,
-                                 abbr = FALSE,
-                                 # week_start = getOption("lubridate.week.start", 7),
-                                 locale = "pt_BR.UTF-8"))) %>%
-  plot_ly(colors = pal_fases, source = "A")  %>%
-  add_ribbons(
-    hoverinfo = 'none'
-    ,x = ~data
-    ,ymin = ~LL_EXP
-    ,ymax = ~UL_EXP
-    ,fillcolor= ~phase_string
-    ,color = ~phase_string
-    ,opacity = 0.25
-  )   %>%
-  add_trace(
-    x = ~data,
-    y = ~CL,
-    type = "scatter",
-    mode = "markers+lines",
-    color = ~phase_string,
-    showlegend = FALSE,
-    text = ~day,
-    hovertemplate = "<extra><b>Valor</b>: %{y:d}<br><b>Data</b>: %{x}<br><b>Dia</b>: %{text}</extra>"
+    fit = map(data , ~ shewhart_fit(data = .x, index_col = N, values_col = y, method = "log")),
+    tidied = map(fit, tidy)
   ) %>%
-  add_trace(
-    x = ~data,
-    y = ~obitosNovos,
-    type = "scatter",
-    mode = "markers+lines",
-    showlegend = FALSE,
-    line = list(color = 'rgb(0, 0, 0)'),
-    marker = list(
-      color = ~if_else(phase != 0, rgb(1, 0, 0, 1),
-                       if_else(day == "Domingo", rgb(0, 1, 0, 1),
-                               if_else(day == "Sábado", rgb(0, 0, 1, 1),
-                                       rgb(0, 0, 0, 1)))),
-      line = list(
-        color = 'rgb(0, 0, 0)',
-        width = 1)
-    ),
-    hoverinfo = 'text',
-    text = ~day,
-    hovertemplate = "<extra><b>Valor</b>: %{y:d}<br><b>Data</b>: %{x}<br><b>Dia</b>: %{text}</extra>"
-  )  %>%
-  layout(#hovermode="y unified",
-    #hoverdistance = 100,
-    title = list(
-      text = "teste",
-      x = 0,
-      y = 1,
-      xanchor = 'left',
-      yanchor = 'top',
-      font = list(
-        family = 'Montserrat, sans-serif',
-        size = 18,
-        color = '#000000')
-    ),
-    margin = list(
-      l = 20,
-      r = 20,
-      b = 20,
-      t = 30,
-      pad = 20),
-    # images = list(
-    #   list(source = "castv2i.svg",
-    #      xref = "paper",
-    #      yref = "paper",
-    #      x= .8,
-    #      y= 1,
-    #      sizex = 0.3,
-    #      sizey = 0.3,
-    #      opacity = 0.25
-    # )),
-    # images = list(
-    #   list(source = "logo.final.CC_text_2b.svg",
-    #        xref = "paper",
-    #        yref = "paper",
-    #        x= 1,
-    #        y= 1,
-    #        xanchor = "right",
-    #        yanchor = "top",
-    #        sizex = .2,
-    #        sizey = .2,
-    #        opacity = 0.25
-    #   )),
-    legend = list(orientation = "v",
-                  x = 0.05,
-                  y = .95,
-                  bgcolor = 'rgba(0,0,0,0)'),
-    yaxis = list(title = "Óbitos diários"#,
-                 #range = c(-1, 1.25*y_max)#,
-                 #showspikes = TRUE,
-                 #spikethickness = 1,
-                 #spikecolor = "rgb(0,0,0,.5)",
-                 #spikesnap = "cursor",
-                 #hoverdistance = -1,
-                 #spikemode = "across+marker"
-    ),
-    xaxis = list(title = "Data",
-                 type = 'date',
-                 tickformat = "%d %b",
-                 dtick = 86400000.0*15
-                 # showspikes = TRUE,
-                 # spikethickness = 1,
-                 # spikecolor = "rgb(0,0,0,.5)",
-                 # spikesnap = "cursor",
-                 # hoverdistance = -1,
-                 # spikemode = "across+marker"
-    )
-  ) %>% config(modeBarButtonsToRemove = c("zoomIn2d", "zoomOut2d",  'zoom2d', 'pan2d', 'resetScale2d',
-                                          'hoverClosestCartesian', 'hoverCompareCartesian',
-                                          'select2d','lasso2d', 'toggleSpikelines'),
-               displayModeBar = TRUE,
-               displaylogo = FALSE ,
-               locale = 'pt-BR',
-               toImageButtonOptions = list(
-                 format = "png",
-                 #filename = paste("shewhart:", values$file_name),
-                 width = 1200,
-                 height = 600,
-                 scale = 1
-               ))
-
-values$has_plotly <- TRUE
-values$p
+  mutate(fit = if_else(phase == max(phase), lag(fit), fit),
+         tidied = if_else(phase == max(phase), lag(tidied), tidied),
+         fitted = map2(data, fit, ~ predict(.y, newdata = .x, se.fit = FALSE))) %>%
+  unnest(c(data, fitted)) %>%
+  mutate(methodresidous = if_else(model == "log",
+                            log(y + 1) - fitted,
+                            y - (fitted - lag(fitted, default = 1))))
+  shewhart_residuos(method = "gompertz", y)
 
 
+    group_by(phase) %>%
+  mutate(CONL_1 = 2.66*mean(abs(residuals - lag(residuals)), na.rm = TRUE),
+         UCL = pmax(0, fitted + CONL_1, na.rm = TRUE),
+         LCL = pmax(0, fitted - CONL_1, na.rm = TRUE))   %>%
+  mutate(
+    CL = pmax(exp(fitted) - 1, 0, na.
 
-
-
+              rm = TRUE),
+    UL_EXP = pmax(exp(UCL) - 1, na.rm = TRUE),
+    LL_EXP = pmax(exp(LCL) - 1, na.rm = TRUE)
+  )
 
