@@ -26,6 +26,8 @@ shewhart <- function(data, values_col, index_col, start_base = 10, type = "ggplo
     rev(pals::brewer.set1(8))
   )
 
+  y_max = data %>% pull({{values_col}}) %>% max(na.rm = TRUE)
+
   p <- plot_data %>%
     mutate(day = str_to_title(wday({{index_col}},
                                    label = TRUE,
@@ -57,15 +59,15 @@ shewhart <- function(data, values_col, index_col, start_base = 10, type = "ggplo
       type = "scatter",
       mode = "markers+lines",
       showlegend = FALSE,
-      line = list(color = 'rgb(0, 0, 0)'),
-      marker = list(
-        color = ~if_else(phase != 0, rgb(1, 0, 0, 1),
-                         if_else(day == "Domingo", rgb(0, 1, 0, 1),
-                                 if_else(day == "Sábado", rgb(0, 0, 1, 1),
-                                         rgb(0, 0, 0, 1)))),
+      line = list(color = 'rgb(0.25, 0.25, 0.25, .75)'),
+      marker = list(color = 'rgb(0.25, 0.25, 0.25, .75)',
+        # color = ~if_else(phase != 0, rgb(1, 0, 0, 1),
+        #                  if_else(day == "Domingo", rgb(0, 1, 0, 1),
+        #                          if_else(day == "Sábado", rgb(0, 0, 1, 1),
+        #                                  rgb(0, 0, 0, 1)))),
         line = list(
-          color = 'rgb(0, 0, 0)',
-          width = 1)
+          color = 'rgb(0.25, 0.25, 0.25, .75)',
+          width = 0)
       ),
       hoverinfo = 'text',
       text = ~day,
@@ -114,10 +116,10 @@ shewhart <- function(data, values_col, index_col, start_base = 10, type = "ggplo
       #   )),
       legend = list(orientation = "h",
                     x = 0.05,
-                    y = .95,
+                    y = 1.05,
                     bgcolor = 'rgba(0,0,0,0)'),
-      yaxis = list(title = "Óbitos diários"#,
-                   #range = c(-1, 1.25*y_max)#,
+      yaxis = list(title = "Óbitos diários",
+                   range = c(-1, 1.25*y_max)#,
                    #showspikes = TRUE,
                    #spikethickness = 1,
                    #spikecolor = "rgb(0,0,0,.5)",

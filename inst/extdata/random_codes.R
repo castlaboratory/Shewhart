@@ -87,6 +87,8 @@ Gompertz <- function(x, a, b, g){
   return(result)
 }
 
+teste <- readRDS()
+
 gptz <- teste %>%
   mutate(N = row_number(),
          y = obitosNovos,
@@ -98,9 +100,21 @@ Gomp1 <-  nls(ay ~ Gompertz(N, a, b, g),
               data = gptz)
 
 
-gptz_model = nls(ay ~ SSgompertz(N, Asym, b2, b3), data = gptz %>% filter(row_number() <= 10))
+fit = nls(ay ~ SSgompertz(N, Asym, b2, b3), data = gptz %>%
+            mutate(N = row_number(),
+                   y = obitosNovos,
+                   ay = cumsum(obitosNovos) + 1) %>% filter(row_number() <= 10))
 
+fitlm <- lm(y ~ N, gptz %>%
+  mutate(N = row_number(),
+         y = obitosNovos,
+         ay = cumsum(obitosNovos) + 1) %>% filter(row_number() <= 10))
+
+length(fitlm$fitted.values)
+
+length(fit$m$fitted())
 shewhart_fit(data = gptz %>% filter(row_number() <= 10), index_col = N, values_col = y)
+
 
 
 gptz_model$control
