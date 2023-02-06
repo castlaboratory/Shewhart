@@ -149,11 +149,9 @@ ggplot(data = dbs) +
               alpha = .25) +
   theme(legend.direction = "horizontal",
         legend.position = "bottom") +
-  labs(color = if_else(str_detect(locale, "en"), "Phase", "Fase"),
-       fill = if_else(str_detect(locale, "pt"), "Phase", "Fase")) +
   coord_cartesian(ylim = c(0, 1.1*ymax))
 
-
-shewhart(data = base, values_col = obitosNovos, index_col = data, model = "loglog", phase_changes = datas)
+datas <- shewhart_7points(data = dbs, values_col = obitosNovos, index_col = data, model = "log")
+dbs <- shewhart_model(data = dbs, values_col = obitosNovos, index_col = data, model = "log", phase_changes = datas)
 
 

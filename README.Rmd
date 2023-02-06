@@ -1,0 +1,117 @@
+---
+title: "Shewhart plots in R"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(Shewhart)
+```
+
+
+## Installation
+
+To install from Github you can use the `install_github` command from the `devtools` package:  
+
+```{r, eval=FALSE}
+devtools::install_github("castlaboratory/Shewhart")
+```
+
+## Usage
+
+### Data
+
+```{r}
+cvd_recife <- read_rds(system.file("extdata", package = "Shewhart", file = "recife_2002_covid19.rds"))
+
+cvd_recife %>% glimpse()
+```
+
+### GGPLOT
+
+```{r}
+shewhart(data = cvd_recife, 
+         index_col = data,
+         values_col = obitosNovos, 
+         locale = "en_US")
+```
+
+```{r}
+shewhart(data = cvd_recife, 
+         index_col = data,
+         values_col = obitosNovos, 
+         model = "loglog",
+         locale = "en_US")
+```
+
+
+### PLOTLY
+
+
+```{r, eval=FALSE}
+shewhart(data = cvd_recife, 
+         index_col = data,
+         values_col = obitosNovos, 
+         locale = "en_US", 
+         model = "log",
+         type = "plotly")
+```
+
+### Autodetect phases  
+
+You can use the 7-point rule with the command `shewhart_7points`
+
+```{r}
+phase_dates <- shewhart_7points(data = cvd_recife, 
+                                index_col = data, 
+                                values_col = obitosNovos)
+print(phase_dates)
+```
+
+You can get de model using these dates with the command `shewhart_model`
+
+```{r}
+shwt_model <- shewhart_model(data = cvd_recife,
+                             index_col = data,
+                             values_col = obitosNovos, 
+                             phase_changes = phase_dates)
+
+shwt_model %>% head()
+```
+
+If you already have the dates or the model you can use it to make the plot
+
+```{r}
+shewhart(data = cvd_recife, 
+         index_col = data,
+         values_col = obitosNovos, 
+         model = "loglog",
+         locale = "en_US",
+         phase_changes = phase_dates)
+
+
+shewhart(data = shwt_model, 
+         index_col = data,
+         values_col = obitosNovos, 
+         model = "loglog",
+         locale = "en_US")
+```
+
+
+
+## Depedencies
+
+this package depends of:
+
+- lubridate (>= 1.8.0),
+- tidyverse (>= 1.3.0),
+- tibbletime (>= 0.1.6),
+- tidymodels (>= 1.0.0),
+- pals (>= 1.7),
+- scales (>= 1.2.1),
+- plotly (>= 4.1)
+
+## Stay Tuned
+
+Please visit the [castlab.org](https://castlab.org) for latest updates and news.

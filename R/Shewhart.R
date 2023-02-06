@@ -101,17 +101,6 @@ shewhart_fit <- function(data, index_col, values_col, model = "log", ...){
             data = . ,
             start = list(Asym=10000, b2=2, b3=.02),
             control = nls.control(maxiter = 500))
-      # nls(avar ~ SSgompertz(N, Asym, b2, b3),
-      #     data = . %>% select(N, var) %>%
-      #       spline %>%
-      #       as_tibble() %>%
-      #       rename_with(~ c("N", "var")),
-      #     start = list(Asym = 1, b2 = 1, b3 = -1),
-      #     control = nls.control(maxiter = 50))
-        #nls(var ~ Gompertz(N, y0, ymax, k, lag),
-        #    data = . ,
-        #    start = list(y0 = 0.15, ymax = 7, k = 0.5, lag = 1)
-        #    )
     }, error=function(e) NA_real_)
     stopifnot(!is.na(fit))
   }
@@ -197,11 +186,11 @@ stopifnot(model %in% c("log", "loglog", "gompertz"))
      ungroup() %>%
      mutate(phase_string = case_when(
        (str_detect(locale, "en") & (phase == 0)) ~ "Base",
-       (str_detect(locale, "en") & (phase == max(phase))) ~ "Monitoring",
-       (str_detect(locale, "en") & (phase > 0) &  (phase != max(phase))) ~ paste0("Phase ", phase),
+       (str_detect(locale, "en") & (phase == max(phase, na.rm = TRUE))) ~ "Monitoring",
+       (str_detect(locale, "en") & (phase > 0)&(phase != max(phase))) ~ paste0("Phase ", phase),
        (str_detect(locale, "pt") & (phase == 0)) ~ "Base",
-       (str_detect(locale, "pt") & (phase == 0)) ~ "Monitorando",
-       (str_detect(locale, "pt") & (phase > 0) &  (phase != max(phase))) ~ paste0("Fase ", phase)
+       (str_detect(locale, "pt") & (phase  == max(phase, na.rm = TRUE))) ~ "Monitorando",
+       (str_detect(locale, "pt") & (phase > 0)&(phase != max(phase))) ~ paste0("Fase ", phase)
      )
             # if_else(phase == 0, "Base",
             #                        if_else(phase == max(phase), "Monitoring",

@@ -22,7 +22,7 @@ shewhart <- function(data, values_col, index_col,
   stopifnot(type %in% c("ggplot", "plotly"))
 
   locale_sys <- Sys.getlocale("LC_TIME")
-  Sys.setenv("LC_TIME" = locale)
+  Sys.setenv("LC_TIME" = if_else(str_detect(locale, "en"), "en_US.UTF-8", "pt_BR.UTF-8"))
 
 
   if(!all(c("phase", "phase_string", "CL", "UL_EXP", "UL_EXP", "CONL_1", "fit", "fitted") %in% names(data))) {
@@ -68,7 +68,7 @@ shewhart <- function(data, values_col, index_col,
               legend.position = "bottom") +
         labs(color = if_else(str_detect(locale, "en"), "Phase", "Fase"),
              fill = if_else(str_detect(locale, "en"), "Phase", "Fase")) +
-        coord_cartesian(ylim = c(0, 1.1*ymax))
+        coord_cartesian(ylim = c(0, 1.1*y_max))
   }
 
 
