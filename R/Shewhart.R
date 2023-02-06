@@ -98,11 +98,16 @@ shewhart_fit <- function(data, index_col, values_col, model = "log", ...){
       fit <- data %>% mutate(avar := cumsum({{values_col}}) + 1,
                              var := {{values_col}}) %>%
         nls(avar ~ SSgompertz(N, Asym, b2, b3),
-            data = . %>% select(N, var) %>%
-              spline %>%
-              as_tibble() %>%
-              rename_with(~ c("N", "var")),
-            control = nls.control(maxiter = 50))
+            data = . ,
+            start = list(Asym=10000, b2=2, b3=.02),
+            control = nls.control(maxiter = 500))
+      # nls(avar ~ SSgompertz(N, Asym, b2, b3),
+      #     data = . %>% select(N, var) %>%
+      #       spline %>%
+      #       as_tibble() %>%
+      #       rename_with(~ c("N", "var")),
+      #     start = list(Asym = 1, b2 = 1, b3 = -1),
+      #     control = nls.control(maxiter = 50))
         #nls(var ~ Gompertz(N, y0, ymax, k, lag),
         #    data = . ,
         #    start = list(y0 = 0.15, ymax = 7, k = 0.5, lag = 1)
@@ -124,7 +129,11 @@ shewhart_fit <- function(data, index_col, values_col, model = "log", ...){
 #' @param start_base Number of points in start of the series to use as base
 #' @param model One of log (default) and Gompetz.
 #' @export
-shewhart_model <- function(data, values_col, index_col, start_base = 10, model = "log", phase_changes = character(), ...){
+shewhart_model <- function(data, values_col, index_col,
+                           start_base = 10,
+                           model = "log",
+                           phase_changes = character(),
+                           locale = "pt_BR", ...){
 stopifnot(model %in% c("log", "loglog", "gompertz"))
    data %>%
     select({{index_col}}, {{values_col}}) %>%
@@ -186,7 +195,16 @@ stopifnot(model %in% c("log", "loglog", "gompertz"))
        )
      ) %>%
      ungroup() %>%
-     mutate(phase_string = if_else(phase == 0, "Base",
-                                   if_else(phase == max(phase), "Monitoring",
-                                           paste0("Phase ", phase))))
+     mutate(phase_string = case_when(
+       (str_detect(locale, "en") & (phase == 0)) ~ "Base",
+       (str_detect(locale, "en") & (phase == max(phase))) ~ "Monitoring",
+       (str_detect(locale, "en") & (phase > 0) &  (phase != max(phase))) ~ paste0("Phase ", phase),
+       (str_detect(locale, "pt") & (phase == 0)) ~ "Base",
+       (str_detect(locale, "pt") & (phase == 0)) ~ "Monitorando",
+       (str_detect(locale, "pt") & (phase > 0) &  (phase != max(phase))) ~ paste0("Fase ", phase)
+     )
+            # if_else(phase == 0, "Base",
+            #                        if_else(phase == max(phase), "Monitoring",
+            #                                paste0("Phase ", phase)))
+            )
 }

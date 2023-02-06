@@ -14,7 +14,7 @@ base <- cvdbr_ms %>% filter(coduf == '26', municipio == 'Recife')
 
 write_rds(recife, "inst/extdata/recife.rds")
 
-
+base <- read_rds(file = "inst/extdata/recife_2002_covid19.rds")
 
 
 library(tidyverse)
@@ -117,43 +117,43 @@ shewhart_fit(data = gptz %>% filter(row_number() <= 10), index_col = N, values_c
 
 
 
-gptz_model$control
-
-recife <- read_rds("inst/extdata/")
-
-gptz %>%
-  left_join(tibble(data = c(min(.$data + 10)), change = TRUE), by = "data") %>%
-  replace_na(list(change = FALSE)) %>%
-  arrange(data) %>%
-  mutate(phase = cumsum(change)) %>%
-  group_by(phase) %>%
-  mutate(N = row_number(),
-         model = "log") %>%
-  ungroup() %>%
-  nest(data = -phase) %>%
-  mutate(
-    fit = map(data , ~ shewhart_fit(data = .x, index_col = N, values_col = y, method = "log")),
-    tidied = map(fit, tidy)
-  ) %>%
-  mutate(fit = if_else(phase == max(phase), lag(fit), fit),
-         tidied = if_else(phase == max(phase), lag(tidied), tidied),
-         fitted = map2(data, fit, ~ predict(.y, newdata = .x, se.fit = FALSE))) %>%
-  unnest(c(data, fitted)) %>%
-  mutate(methodresidous = if_else(model == "log",
-                            log(y + 1) - fitted,
-                            y - (fitted - lag(fitted, default = 1))))
-  shewhart_residuos(method = "gompertz", y)
 
 
-    group_by(phase) %>%
-  mutate(CONL_1 = 2.66*mean(abs(residuals - lag(residuals)), na.rm = TRUE),
-         UCL = pmax(0, fitted + CONL_1, na.rm = TRUE),
-         LCL = pmax(0, fitted - CONL_1, na.rm = TRUE))   %>%
-  mutate(
-    CL = pmax(exp(fitted) - 1, 0, na.
+ymax <- max(dbs$obitosNovos, na.rm = TRUE)
 
-              rm = TRUE),
-    UL_EXP = pmax(exp(UCL) - 1, na.rm = TRUE),
-    LL_EXP = pmax(exp(LCL) - 1, na.rm = TRUE)
-  )
+opt_locale <- Sys.getlocale()
+
+
+
+Sys.setenv(LC_COLLATE = "pt", LC_TIME="pt", LANGUAGE = "pt")
+
+Sys.getenv("LANGUAGE")
+Sys.setenv("LANGUAGE"="pt_BR")
+
+Sys.setlocale("LC_TIME", "pt_BR.UTF-8")
+
+Sys.getenv("LC_TIME")
+Sys.setlocale("LC_TIME", "")
+locale_sys <- Sys.getlocale("LC_TIME")
+
+ggplot(data = dbs) +
+  geom_point(aes(data, obitosNovos)) +
+  theme_light() +
+  geom_line(aes(x = data, y = CL, color = phase_string),
+            linewidth = 1.25) +
+  geom_line(aes(x = data, y = LL_EXP, color = phase_string),
+            linewidth = 1.25, alpha = .25) +
+  geom_line(aes(x = data, y = UL_EXP, color = phase_string),
+            linewidth = 1.25, alpha = .25) +
+  geom_ribbon(aes(x = data, ymin = LL_EXP, ymax = UL_EXP, fill = phase_string),
+              alpha = .25) +
+  theme(legend.direction = "horizontal",
+        legend.position = "bottom") +
+  labs(color = if_else(str_detect(locale, "en"), "Phase", "Fase"),
+       fill = if_else(str_detect(locale, "pt"), "Phase", "Fase")) +
+  coord_cartesian(ylim = c(0, 1.1*ymax))
+
+
+shewhart(data = base, values_col = obitosNovos, index_col = data, model = "loglog", phase_changes = datas)
+
 
