@@ -71,6 +71,7 @@ shewhart <- function(data, values_col, index_col,
         labs(color = if_else(str_detect(locale, "en"), "Phase", "Fase"),
              fill = if_else(str_detect(locale, "en"), "Phase", "Fase")) +
         coord_cartesian(ylim = c(0, 1.1*y_max)) +
+         labs(y = enquo(values_col), x = enquo(index_col)) +
         scale_x_date(date_labels = "%b/%y")
   }
 
