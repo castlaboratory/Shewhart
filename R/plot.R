@@ -66,7 +66,7 @@ shewhart <- function(data, values_col, index_col,
         geom_line(aes(x = {{index_col}}, y = CL, color = phase_string),
                 linewidth = 1.25) +
         geom_point(aes({{index_col}}, {{values_col}})) +
-        geom_point(aes({{index_col}}, {{values_col}}), alpha = .25) +
+        geom_line(aes({{index_col}}, {{values_col}}), alpha = .25) +
         theme(legend.direction = "horizontal",
               legend.position = "bottom") +
         labs(color = if_else(str_detect(locale, "en"), "Phase", "Fase"),

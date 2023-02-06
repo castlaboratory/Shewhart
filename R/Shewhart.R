@@ -49,18 +49,19 @@ shewhart_7points <- function(data, index_col, values_col, start_base = 10, model
 
     autodate <- running_model %>%
       select({{index_col}}, {{values_col}}, fitted, CL, phase) %>%
-      filter(phase == max(phase)) %>%
-      mutate(
-        upper = if_else({{values_col}} > CL, 1, 0),
-        lower = if_else({{values_col}} <  CL, 1, 0),
-        upper_cs = rolling_sum(upper),
-        lower_cs = rolling_sum(lower)) %>%
-      filter(upper_cs == 7 | lower_cs == 7) %>%
-      slice_min(n = 1, order_by = {{index_col}}) %>%
-      pull({{index_col}})
+      filter(phase == max(phase))
 
-    if(length(autodate) > 0) {
-      found_phase_dates <- unique(c(found_phase_dates, autodate + 1))
+    if(nrow(autodate) > 7) {
+      autodate_vector <- autodate %>%
+        mutate(
+          upper = if_else({{values_col}} > CL, 1, 0),
+          lower = if_else({{values_col}} <  CL, 1, 0),
+          upper_cs = rolling_sum(upper),
+          lower_cs = rolling_sum(lower)) %>%
+        filter(upper_cs == 7 | lower_cs == 7) %>%
+        slice_min(n = 1, order_by = {{index_col}}) %>%
+        pull({{index_col}})
+      found_phase_dates <- unique(c(found_phase_dates, autodate_vector + 1))
     } else
       break
 

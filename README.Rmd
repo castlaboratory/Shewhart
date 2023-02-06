@@ -30,7 +30,7 @@ install.packages("Shewhart.zip", repos = NULL)
 ### Data
 
 ```{r}
-cvd_recife <- read_rds(system.file("extdata", package = "Shewhart", file = "recife_2002_covid19.rds"))
+cvd_recife <- read_rds(system.file("extdata", package = "Shewhart", file = "recife_2020_covid19.rds"))
 
 cvd_recife %>% glimpse()
 ```

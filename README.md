@@ -22,15 +22,15 @@ install.packages("Shewhart.zip", repos = NULL)
 ### Data
 
 ``` r
-cvd_recife <- read_rds(system.file("extdata", package = "Shewhart", file = "recife_2002_covid19.rds"))
+cvd_recife <- read_rds(system.file("extdata", package = "Shewhart", file = "recife_2020_covid19.rds"))
 
 cvd_recife %>% glimpse()
 ```
 
-    ## Rows: 162
+    ## Rows: 279
     ## Columns: 2
-    ## $ data        <date> 2022-01-01, 2022-01-02, 2022-01-03, 2022-01-04, 2022-01-0…
-    ## $ obitosNovos <dbl> 0, 5, 1, 5, 1, 3, 2, 3, 3, 1, 3, 3, 4, 1, 4, 4, 4, 2, 4, 4…
+    ## $ data        <date> 2020-03-28, 2020-03-29, 2020-03-30, 2020-03-31, 2020-04-0…
+    ## $ obitosNovos <int> 4, 0, 0, 0, 1, 1, 0, 4, 4, 2, 2, 4, 5, 5, 2, 3, 9, 3, 13, …
 
 ### GGPLOT
 
@@ -75,8 +75,9 @@ phase_dates <- shewhart_7points(data = cvd_recife,
 print(phase_dates)
 ```
 
-    ## [1] "2022-01-11" "2022-01-31" "2022-02-17" "2022-03-05" "2022-03-23"
-    ## [6] "2022-04-21" "2022-04-28" "2022-05-13"
+    ##  [1] "2020-04-07" "2020-05-06" "2020-06-04" "2020-06-15" "2020-06-22"
+    ##  [6] "2020-07-04" "2020-07-15" "2020-08-06" "2020-08-29" "2020-12-08"
+    ## [11] "2020-12-21" "2020-12-28"
 
 You can get de model using these dates with the command `shewhart_model`
 
@@ -91,13 +92,13 @@ shwt_model %>% head()
 
     ## # A tibble: 6 × 18
     ##   phase data       obitosNovos change model  flag     N fit    tidied   fitted
-    ##   <int> <date>           <dbl> <lgl>  <chr> <int> <int> <list> <list>    <dbl>
-    ## 1     0 2022-01-01           0 FALSE  log       0     1 <lm>   <tibble>  0.943
-    ## 2     0 2022-01-02           5 FALSE  log       0     2 <lm>   <tibble>  0.976
-    ## 3     0 2022-01-03           1 FALSE  log       0     3 <lm>   <tibble>  1.01 
-    ## 4     0 2022-01-04           5 FALSE  log       0     4 <lm>   <tibble>  1.04 
-    ## 5     0 2022-01-05           1 FALSE  log       0     5 <lm>   <tibble>  1.08 
-    ## 6     0 2022-01-06           3 FALSE  log       0     6 <lm>   <tibble>  1.11 
+    ##   <int> <date>           <int> <lgl>  <chr> <int> <int> <list> <list>    <dbl>
+    ## 1     0 2020-03-28           4 FALSE  log       0     1 <lm>   <tibble>  0.330
+    ## 2     0 2020-03-29           0 FALSE  log       0     2 <lm>   <tibble>  0.419
+    ## 3     0 2020-03-30           0 FALSE  log       0     3 <lm>   <tibble>  0.508
+    ## 4     0 2020-03-31           0 FALSE  log       0     4 <lm>   <tibble>  0.598
+    ## 5     0 2020-04-01           1 FALSE  log       0     5 <lm>   <tibble>  0.687
+    ## 6     0 2020-04-02           1 FALSE  log       0     6 <lm>   <tibble>  0.776
     ## # … with 8 more variables: residuals <dbl>, CONL_1 <dbl>, UCL <dbl>, LCL <dbl>,
     ## #   CL <dbl>, UL_EXP <dbl>, LL_EXP <dbl>, phase_string <chr>
 

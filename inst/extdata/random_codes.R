@@ -66,14 +66,14 @@ base %>% filter(year(data) == 2022) %>%
 
 base <- read_rds("inst/extdata/cvd19br_ms.rds")  %>% filter(coduf == '26', municipio == 'Recife')
 
-teste <- base %>% filter(year(data) == 2022) %>%
+teste <- base %>% filter(year(data) == 2020) %>%
     mutate(obitosNovos = obitosAcumulado - lag(obitosAcumulado, 1L, order_by = data, default = 0L)) %>%
     select(data, obitosNovos) %>%
   mutate(obitosNovos = if_else(obitosNovos >= 0, obitosNovos, 0L))
 
 #teste$obitosNovos[1] = 0
-
-write_rds(teste, "inst/extdata/recife_2002_covid19.rds")
+teste %>% count(dat)
+write_rds(teste, "inst/extdata/recife_2020_covid19.rds")
 
 library(epifitter)
 teste
