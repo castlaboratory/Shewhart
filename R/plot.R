@@ -57,13 +57,15 @@ shewhart <- function(data, values_col, index_col,
     p <- plot_data  %>%
         ggplot() +
         theme_light() +
-        geom_point(aes({{index_col}}, {{values_col}})) +
         geom_line(aes(x = {{index_col}}, y = LL_EXP, color = phase_string),
                   linewidth = 1.25, alpha = .25) +
         geom_line(aes(x = {{index_col}}, y = UL_EXP, color = phase_string),
                   linewidth = 1.25, alpha = .25) +
         geom_ribbon(aes(x = {{index_col}}, ymin = LL_EXP, ymax = UL_EXP, fill = phase_string),
                     alpha = .25) +
+        geom_line(aes(x = {{index_col}}, y = CL, color = phase_string),
+                linewidth = 1.25) +
+        geom_point(aes({{index_col}}, {{values_col}})) +
         theme(legend.direction = "horizontal",
               legend.position = "bottom") +
         labs(color = if_else(str_detect(locale, "en"), "Phase", "Fase"),

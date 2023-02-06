@@ -3,11 +3,18 @@ Shewhart plots in R
 
 ## Installation
 
-To install from Github you can use the `install_github` command from the
-`devtools` package:
+To install the `package` from Github you can use the `install_github`
+command from the `devtools` package:
 
 ``` r
 devtools::install_github("castlaboratory/Shewhart")
+```
+
+You could also download the repository and install via local package
+installation on R.
+
+``` r
+install.packages("Shewhart.zip", repos = NULL)
 ```
 
 ## Usage
@@ -34,7 +41,7 @@ shewhart(data = cvd_recife,
          locale = "en_US")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
 shewhart(data = cvd_recife, 
@@ -44,7 +51,7 @@ shewhart(data = cvd_recife,
          locale = "en_US")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ### PLOTLY
 
@@ -106,7 +113,7 @@ shewhart(data = cvd_recife,
          phase_changes = phase_dates)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 shewhart(data = shwt_model, 
@@ -116,7 +123,7 @@ shewhart(data = shwt_model,
          locale = "en_US")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
 
 ## Depedencies
 

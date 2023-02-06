@@ -12,11 +12,18 @@ library(Shewhart)
 
 ## Installation
 
-To install from Github you can use the `install_github` command from the `devtools` package:  
+To install the `package` from Github you can use the `install_github` command from the `devtools` package:  
 
 ```{r, eval=FALSE}
 devtools::install_github("castlaboratory/Shewhart")
 ```
+
+You could also download the repository and install via local package installation on R.
+
+```{r, eval=FALSE}
+install.packages("Shewhart.zip", repos = NULL)
+```
+
 
 ## Usage
 
