@@ -11,7 +11,7 @@ color_hue <- function(n) {
 #' @param values_col Column with values to analyze
 #' @param phase_changes Vector with dates por positions for changes of phase
 #' @param start_base Number of points in start of the series to use as base
-#' @param model One of log (default) and Gompetz.
+#' @param model One of log (default) and Gompertz.
 #' @export
 shewhart <- function(data, values_col, index_col,
                      start_base = 10, type = "ggplot",
