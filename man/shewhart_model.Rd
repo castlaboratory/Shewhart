@@ -2,31 +2,108 @@
 % Please edit documentation in R/Shewhart.R
 \name{shewhart_model}
 \alias{shewhart_model}
-\title{Get Shewhard phases using 7 points rule}
+\title{Builds a Shewhart phase model (supports dummy variable)}
 \usage{
 shewhart_model(
   data,
   values_col,
   index_col,
   start_base = 10,
-  model = c("log", "competz"),
-  phase_changes = character(),
+  model = "log",
+  phase_changes = NULL,
+  locale = "pt_BR",
+  dummy_col = NULL,
   ...
 )
 }
 \arguments{
-\item{data}{A tibble white de}
+\item{data}{A data.frame or tibble containing the data.}
 
-\item{values_col}{Column with values to analyze}
+\item{values_col}{Unquoted numeric column with the values to be analyzed.}
 
-\item{index_col}{Column with sequence of dates or intergers}
+\item{index_col}{Unquoted column representing the index (dates, time, or integer).}
 
-\item{start_base}{Number of points in start of the series to use as base}
+\item{start_base}{Integer. Number of initial points used to define the base phase.
+Defaults to 10.}
 
-\item{model}{One of log (default) and Gompetz.}
+\item{model}{A character string specifying which model to fit. Must be one of
+\code{"log"}, \code{"loglog"}, or \code{"gompertz"}.}
 
-\item{phase_changes}{Vector with dates por positions for changes of phase}
+\item{phase_changes}{(Optional) A vector of dates/positions where phase changes
+have already been identified. If \code{NULL}, assumes only one initial change
+after \code{start_base} points.}
+
+\item{locale}{A character string for the language setting ("pt_BR" by default).
+Determines the labeling of phases in the output (e.g., "Base", "Monitorando").}
+
+\item{dummy_col}{(Optional) Unquoted column name for a dummy variable. If \code{NULL},
+no dummy is used. If provided, that column must exist in \code{data}.}
+
+\item{...}{Additional parameters (currently unused).}
+}
+\value{
+A tibble containing:
+\itemize{
+  \item \code{index_col}, \code{values_col}: Original columns,
+  \item \code{phase}: Numeric phase identifier,
+  \item \code{model}: The model type used,
+  \item \code{change}: Logical indicator of where a new phase begins,
+  \item \code{fitted}: Fitted values (on the model scale),
+  \item \code{residuals}: Residuals,
+  \item \code{UCL}, \code{LCL}, \code{CL}: Control limits,
+  \item \code{UL_EXP}, \code{LL_EXP}: Control limits mapped back to the original scale,
+  \item \code{phase_string}: Text label for the phase ("Base", "Monitorando", etc.).
+}
 }
 \description{
-Get Shewhard phases using 7 points rule
+Constructs a data frame annotated with phase information, control limits,
+and fitted values for each time/index point. Optionally incorporates a dummy
+variable (\code{dummy_col}) in the model if \code{model} is "log" or "loglog".
+}
+\details{
+1. Identifies phases by marking \code{(min(index) + start_base)} and any
+   \code{phase_changes} as breakpoints.
+2. Splits the data by phase, fits a model (\code{\link{shewhart_fit}}),
+   and calculates residuals and control limits.
+3. Converts the fitted values back to the original data scale in \code{CL},
+   \code{UL_EXP}, and \code{LL_EXP}.
+4. Labels each phase string in Portuguese or English, based on \code{locale}.
+}
+\examples{
+\dontrun{
+library(dplyr)
+
+# Example data
+set.seed(123)
+df <- tibble(
+  time = 1:30,
+  value = c(rpois(10, 5), rpois(10, 10), rpois(10, 15))
+)
+
+# Build a Shewhart model with default "log"
+shew_model <- shewhart_model(
+  data          = df,
+  values_col    = value,
+  index_col     = time,
+  start_base    = 10,
+  model         = "log"
+)
+head(shew_model)
+
+# Incorporate a dummy:
+df2 <- tibble(
+  time = 1:20,
+  value = rpois(20, 5),
+  dummy_var = rep(c(0, 1), each = 10)
+)
+shew_model2 <- shewhart_model(
+  data       = df2,
+  values_col = value,
+  index_col  = time,
+  model      = "log",
+  dummy_col  = dummy_var
+)
+head(shew_model2)
+}
+
 }

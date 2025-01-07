@@ -1,0 +1,37 @@
+url: https://github.com/castlaboratory/Shewhart
+template:
+  light-switch: false
+  dark-mode: false
+  trailing_slash_redirect: true
+  package: tidytemplate
+  bootstrap: 5
+  bslib:
+
+
+navbar:
+  structure:
+    right: [search, github]
+  components:
+    github:
+      icon: fa-github
+      href: https://github.com/castlaboratory/Shewhart
+      aria-label: Github
+# navbar:
+#   structure:
+#     left:  [intro, reference]
+#     right: [search, github, lightswitch]
+
+footer:
+  structure:
+    left: [rmd]
+    right: [developed_by]
+  components:
+      #p: "\n\n"
+      rmd: |
+        **Shewwhart** is part of an ecosystem of R packages for data analysis and
+        computational document processing<br>developed at the [Castlab](https://castlab.org).
+      developed_by: |
+        Developed by André Leite, Cristiano Ferraz and Raydonal Ospina
+
+development:
+  mode: auto

@@ -1,124 +1,205 @@
 ---
-title: "Shewhart plots in R"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.retina = 2, 
+  fig.width = 6, 
+  fig.height = 3,
+  fig.path = "man/figures/README-",
+  out.width = "80%"
+)
+
 library(tidyverse)
-library(Shewhart)
+library(Shewhart) %>% suppressPackageStartupMessages()
 ```
 
+# Shewhart <a href="https://github.com/castlaboratory/Shewhart"><img src="man/figures/logo.png" align="right" height="114" alt="Shewhart website" /></a>
+
+<!-- badges: start -->
+![](https://img.shields.io/badge/devel%20version-0.1.1-blue.svg)
+<!-- badges: end -->
+
+The goal of Shewhart is to provide a streamlined workflow for detecting and modeling process phase changes using Shewhart control charts. It features tools for fitting common transformations (log, log-log, Gompertz), identifying phases via the “7 consecutive points” rule, and computing control limits on both transformed and original scales. The package leverages the tidyverse for intuitive data manipulation and is designed to be easily integrated into broader data analysis pipelines.
 
 ## Installation
 
-To install the `package` from Github you can use the `install_github` command from the `devtools` package:  
+You can install the development version of Shewhart from [GitHub](https://github.com/castlaboratory/Shewhart) with:
 
-```{r, eval=FALSE}
-devtools::install_github("castlaboratory/Shewhart")
+``` r
+# install.packages("pak")
+pak::pak("castlaboratory/Shewhart")
 ```
 
-You could also download the repository and install via local package installation on R.
+## Usage Overview
 
-```{r, eval=FALSE}
-install.packages("Shewhart.zip", repos = NULL)
+This package provides functions for creating and analyzing **Shewhart control charts** (using either **ggplot2** or **plotly**) and detecting potential phase changes via the "7 consecutive points" rule. Key functions include:
+
+- `shewhart()`: Creates the control chart plot (either ggplot2 or plotly).
+- `shewhart_7points()`: Detects phase changes by checking for 7 consecutive points above or below the central line.
+- `shewhart_model()`: Builds a data frame (or tibble) with annotated phase information and control limits.
+- `shewhart_fit()`: Internally fits the specified model (e.g., "log", "loglog", or "gompertz").
+
+## Example Data
+
+For demonstration, we'll use a dataset (`cvd_recife`) included in the package:
+
+```{r, eval = TRUE}
+
+cvd_recife <- readr::read_rds(
+  system.file("extdata", 
+              package = "Shewhart", 
+              file = "recife_2020_covid19.rds")
+) %>% 
+  slice_head(n = 50)
+
+cvd_recife %>% 
+  glimpse()
+
 ```
 
+In this dataset, `data` is a date column, and `obitosNovos` are new daily deaths (integer counts).
 
-## Usage
+### Plotting with ggplot2
 
-### Data
+You can create a **ggplot2**-based Shewhart chart simply by setting `type = "ggplot"` (the default). The `shewhart()` function will detect whether the dataset already has phase information—if not, it internally calls `shewhart_7points()` and `shewhart_model()`.
 
-```{r}
-cvd_recife <- read_rds(system.file("extdata", package = "Shewhart", file = "recife_2020_covid19.rds"))
-
-cvd_recife %>% glimpse()
+```{r, eval = TRUE}
+shewhart(
+  data       = cvd_recife, 
+  index_col  = data,
+  values_col = obitosNovos, 
+  locale     = "en_US"
+)
 ```
 
-### GGPLOT
+You can specify a different model (e.g., "loglog"):
 
-```{r}
-shewhart(data = cvd_recife, 
+```{r, eval = TRUE}
+shewhart(
+  data       = cvd_recife, 
+  index_col  = data,
+  values_col = obitosNovos, 
+  model      = "loglog",
+  locale     = "en_US"
+)
+```
+
+In the next example, we first add a new factor column `wd` to the cvd_recife dataset by extracting the day of the week from the data column. By specifying `dummy_col = wd` in the `shewhart()` call, we allow the underlying Shewhart model (here using `model = "log"`) to account for potential day-of-week effects. In other words, each weekday becomes a “dummy” factor that might influence the estimated control limits, helping reveal whether there are systematic shifts or patterns associated with particular days. We also set locale = "en_US" so that date labels and text are formatted in English.
+
+```{r, eval = TRUE}
+shewhart(data = cvd_recife %>% mutate(wd = factor(wday(data))), 
          index_col = data,
          values_col = obitosNovos, 
+         model = "log",
+         dummy_col = wd,
          locale = "en_US")
 ```
 
-```{r}
-shewhart(data = cvd_recife, 
+```{r, eval = TRUE}
+shewhart(data = cvd_recife %>% mutate(wd = factor(wday(data))), 
          index_col = data,
          values_col = obitosNovos, 
          model = "loglog",
+         dummy_col = wd,
          locale = "en_US")
 ```
 
+### Plotting with plotly
 
-### PLOTLY
+To generate an **interactive** chart with **plotly**, set `type = "plotly"`:
 
-
-```{r, eval=FALSE}
-shewhart(data = cvd_recife, 
-         index_col = data,
-         values_col = obitosNovos, 
-         locale = "en_US", 
-         model = "log",
-         type = "plotly")
+```{r, eval = FALSE}
+shewhart(
+  data       = cvd_recife, 
+  index_col  = data,
+  values_col = obitosNovos, 
+  locale     = "en_US", 
+  model      = "log",
+  type       = "plotly"
+)
 ```
 
-### Autodetect phases  
+Hover over points or ribbons to see tooltips, zoom in/out, and more.
 
-You can use the 7-point rule with the command `shewhart_7points`
+## Autodetecting Phases
 
-```{r}
-phase_dates <- shewhart_7points(data = cvd_recife, 
-                                index_col = data, 
-                                values_col = obitosNovos)
+You can explicitly detect phase changes using the **7-point rule** via `shewhart_7points()`:
+
+```{r, eval = TRUE}
+phase_dates <- shewhart_7points(
+  data       = cvd_recife, 
+  index_col  = data, 
+  values_col = obitosNovos
+)
+
 print(phase_dates)
 ```
 
-You can get de model using these dates with the command `shewhart_model`
+## Building a Model for Custom Usage
 
-```{r}
-shwt_model <- shewhart_model(data = cvd_recife,
-                             index_col = data,
-                             values_col = obitosNovos, 
-                             phase_changes = phase_dates)
+You can also build the phase model data frame yourself by calling `shewhart_model()`, passing the detected phase changes:
+
+```{r, eval = TRUE}
+shwt_model <- shewhart_model(
+  data          = cvd_recife,
+  index_col     = data,
+  values_col    = obitosNovos, 
+  phase_changes = phase_dates
+)
 
 shwt_model %>% head()
 ```
 
-If you already have the dates or the model you can use it to make the plot
+This tibble now has columns like `phase`, `CL`, `UL_EXP`, `LL_EXP`, etc., which can be used directly in your custom plots or analyses.
 
-```{r}
-shewhart(data = cvd_recife, 
-         index_col = data,
-         values_col = obitosNovos, 
-         model = "loglog",
-         locale = "en_US",
-         phase_changes = phase_dates)
+## Reusing an Existing Model or Phase Changes
 
+If you already have the `phase_changes` or the annotated data frame from `shewhart_model`, you can pass them to `shewhart()` to avoid recalculating:
 
-shewhart(data = shwt_model, 
-         index_col = data,
-         values_col = obitosNovos, 
-         model = "loglog",
-         locale = "en_US")
+```{r, eval = TRUE}
+# Using phase_changes explicitly:
+shewhart(
+  data          = cvd_recife, 
+  index_col     = data,
+  values_col    = obitosNovos, 
+  model         = "loglog",
+  locale        = "en_US",
+  phase_changes = phase_dates
+)
+
+# Or using the 'shwt_model' directly:
+shewhart(
+  data       = shwt_model, 
+  index_col  = data,
+  values_col = obitosNovos, 
+  model      = "loglog",
+  locale     = "en_US"
+)
 ```
 
+Both approaches yield the same final plot but skip re-running the 7-point detection or the modeling if the data is already annotated.
 
+## Dependencies
 
-## Depedencies
+This package uses:
 
-this package depends of:
+- **lubridate (>= 1.8.0)** for date handling and wday extraction  
+- **tidyverse (>= 1.3.0)** for data manipulation (dplyr, tidyr, etc.)  
+- **tibbletime (>= 0.1.6)** or **slider** for rolling sum calculations  
+- **tidymodels (>= 1.0.0)** for modeling convenience  
+- **pals (>= 1.7)** and **scales (>= 1.2.1)** for color palettes and scaling  
+- **plotly (>= 4.1)** for interactive plots
 
-- lubridate (>= 1.8.0),
-- tidyverse (>= 1.3.0),
-- tibbletime (>= 0.1.6),
-- tidymodels (>= 1.0.0),
-- pals (>= 1.7),
-- scales (>= 1.2.1),
-- plotly (>= 4.1)
+Ensure these are installed and loaded (as needed) before using `Shewhart`.
 
-## Stay Tuned
+## More Information
 
-Please visit the [castlab.org](https://castlab.org) for latest updates and news.
+Visit <https://castlab.org> for updates and other packages/research from the CASTLab team. If you have suggestions or encounter issues, please open an Issue on [GitHub](https://github.com/castlaboratory/Shewhart/issues) or contact us at <leite@castlab.org>.
+
+Happy charting!

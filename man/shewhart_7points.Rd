@@ -2,28 +2,72 @@
 % Please edit documentation in R/Shewhart.R
 \name{shewhart_7points}
 \alias{shewhart_7points}
-\title{Get Shewhard phases using 7 points rule}
+\title{Detects phase changes in a time series using the "7 consecutive points" rule}
 \usage{
 shewhart_7points(
   data,
   index_col,
   values_col,
   start_base = 10,
-  model = c("log", "competz"),
+  model = "log",
+  dummy_col = NULL,
   ...
 )
 }
 \arguments{
-\item{data}{A tibble white de}
+\item{data}{A \code{data.frame} or \code{tibble} containing the data.}
 
-\item{index_col}{Column with sequence of dates or intergers}
+\item{index_col}{Unquoted column name representing the index (dates, time, or integer).}
 
-\item{values_col}{Column with values to analyze}
+\item{values_col}{Unquoted numeric column with the values to be analyzed.}
 
-\item{start_base}{Number of points in start of the series to use as base}
+\item{start_base}{Integer. Number of initial points used to define the base phase.
+Defaults to 10.}
 
-\item{model}{One of log (default) and Gompetz.}
+\item{model}{A character string specifying the model used for fitting: one of
+\code{"log"} (default), \code{"loglog"}, or \code{"gompertz"}.}
+
+\item{dummy_col}{(Optional) Unquoted column name of a dummy variable (if
+applicable). If \code{NULL}, no dummy variable is used.}
+
+\item{...}{Additional parameters (currently unused).}
+}
+\value{
+A vector of index positions (or dates) where a phase change was detected.
 }
 \description{
-Get Shewhard phases using 7 points rule
+Applies a simplified Shewhart criterion to identify phases. If there are
+7 consecutive points above or below the central limit (CL),
+it flags a phase change and refits the model in subsequent iterations.
+}
+\details{
+The function repeatedly checks new phases in blocks of 7 points:
+\enumerate{
+  \item Fits an initial model (via \code{shewhart_model}),
+  \item Finds if 7 consecutive points lie entirely above or below the CL,
+  \item If so, flags a new phase change at \code{(index + 1)} and refits,
+  \item Continues until no further changes are detected or data is exhausted.
+}
+}
+\examples{
+\dontrun{
+library(dplyr)
+
+# Simulated example
+set.seed(123)
+df <- tibble(
+  time = 1:100,
+  value = c(rpois(50, 5), rpois(50, 10))
+)
+
+changes <- shewhart_7points(
+  data = df,
+  index_col = time,
+  values_col = value,
+  start_base = 10,
+  model = "log"
+)
+print(changes)
+}
+
 }
