@@ -5,7 +5,8 @@ Version: 0.1.1
 Authors@R: c(
     person("André", "Leite", , "leite@castlab.org", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4718-9766")),
-    person("Raydonal", "Ospina", , "raydonal@castlab.org", role = "aut"),
+    person("Raydonal", "Ospina", , "raydonal@castlab.org", role = "aut",
+           comment = c(ORCID = "0000-0002-9884-9090")),
     person("Cristiano", "Ferraz", , "first.last@castlab.org", role = "aut",
            comment = c(ORCID = "0000-0002-6838-6734"))
            )
